@@ -1,7 +1,7 @@
 CC = gcc # Compilador
 CFLAGS = -Wall -Wextra -g # Flags de compilação
 LDLIBS = -lm # Ligação das bibliotecas
-OBJS = mosaico.o parsing/parsing.o	# Arquivos objetos
+OBJS = mosaico.o parsing/parsing.o ppmimage/ppmimage.o	# Arquivos objetos
 
 # Regra padrão
 all: mosaico
@@ -12,6 +12,7 @@ mosaico: $(OBJS)
 # Regras de compilação
 mosaico.o: mosaico.c parsing/parsing.h
 parsing/parsing.o: parsing/parsing.c parsing/parsing.h
+ppmimage/ppmimage.o: ppmimage/ppmimage.c ppmimage/ppmimage.h
 
 # Remove arquivos temporários
 clean:
