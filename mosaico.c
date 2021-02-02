@@ -1,5 +1,7 @@
 #include "parsing/parsing.h"
 #include "ppmimage/ppmimage.h"
+#include <sys/types.h>
+#include <dirent.h>
 
 #define MAX_SIZE_STR 100
 
@@ -24,34 +26,29 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    ppmimage_t ppm_test;
-
-    parse_ppmimage(ppm_img, &ppm_test);
-
-    printf("Type: %s\n", ppm_test.type);
-    printf("Width: %i\n", ppm_test.width);
-    printf("Height: %i\n", ppm_test.height);
-    printf("Channel max value: %i\n", ppm_test.channel_max_value);
-    int i, j;
-    for(i = 0; i < ppm_test.height; i++)
+    ppmimage_t* ppm_test = (ppmimage_t *)malloc(sizeof(ppmimage_t) * 10);
+    int i;
+    for(i = 0; i < 10; i++)
     {
-        for(j = 0; j < ppm_test.width; j++)
-            printf("(%i %i %i) ", ppm_test.img[i][j].red, ppm_test.img[i][j].green, ppm_test.img[i][j].blue);
-        printf("\n");
-    }    
-
-    free(ppm_test.type);
-    ppm_test.type = NULL;
-
-    for(i = 0; i < ppm_test.height; i++)
-    {
-        free(ppm_test.img[i]);
-        ppm_test.img[i] = NULL;
+        ppm_test[i].type = NULL;
+        ppm_test[i].img = NULL;
     }
-    free(ppm_test.img);
-    ppm_test.img = NULL;
 
+    parse_ppmimage(ppm_img, &ppm_test[0]);
     fclose(ppm_img);
+
+    printf("Type: %s\n", ppm_test[0].type);
+    printf("Width: %i\n", ppm_test[0].width);
+    printf("Height: %i\n", ppm_test[0].height);
+    printf("Channel max value: %i\n", ppm_test[0].channel_max_value);
+    printf("Mean red: %.2f\n", ppm_test[0].mean_red);
+    printf("Mean green: %.2f\n", ppm_test[0].mean_green); 
+    printf("Mean blue: %.2f\n", ppm_test[0].mean_blue);  
+
+    for(i = 0; i < 10; i++)
+        free_ppmimage(&ppm_test[i]);
+    free(ppm_test);
+    ppm_test = NULL;
 
     return 0;
 }
