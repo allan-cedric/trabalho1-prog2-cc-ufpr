@@ -24,7 +24,7 @@ typedef struct arguments_t
 } arguments_t;
 
 /*
-    Função principal que realiza o parsing da linha de comando.
+    Realiza o parsing da linha de comando.
 */
 void parse_opt(int argc, char **argv, arguments_t *args);
 

@@ -26,7 +26,7 @@
 typedef unsigned char byte;
 
 /*
-    Estrutra que imita um pixel no padrão RGB.
+    Estrutura que imita um pixel no padrão RGB.
 */
 typedef struct pixel_t
 {
@@ -47,32 +47,32 @@ typedef struct ppmimage_t
 } ppmimage_t;
 
 /*
-    Função que realiza o parsing de uma imagem do tipo PPM.
+    Realiza o parsing e a alocação de memória de uma imagem do tipo PPM.
 */
 void parse_ppmimage(FILE *imgfile, ppmimage_t *ppmimg);
 
 /*
-    Função que realiza o parsing do cabeçalho de uma imagem do tipo PPM.
+    Realiza o parsing do cabeçalho de uma imagem do tipo PPM.
 */
 void parse_header(FILE* imgfile, ppmimage_t *ppmimg);
 
 /*
-    Função que realiza a alocação de memória dos pixels de uma imagem do tipo PPM.
+    Realiza a alocação de memória dos pixels de uma imagem do tipo PPM.
 */
 void alloc_pixels(FILE* imgfile, ppmimage_t *ppmimg);
 
 /*
-    Função que realiza o parsing dos pixels de uma imagem do tipo PPM P3.
+    Realiza o parsing dos pixels de uma imagem do tipo PPM P3.
 */
 void parse_pixels_P3(FILE* imgfile, ppmimage_t *ppmimg);
 
 /*
-    Função que realiza o parsing dos pixels de uma imagem do tipo PPM P6.
+    Realiza o parsing dos pixels de uma imagem do tipo PPM P6.
 */
 void parse_pixels_P6(FILE* imgfile, ppmimage_t *ppmimg);
 
 /*
-    Função que desaloca a memória reservada para uma imagem do tipo PPM.
+    Desaloca a memória reservada para uma imagem do tipo PPM.
 */
 void free_ppmimage(ppmimage_t *ppmimg);
 
