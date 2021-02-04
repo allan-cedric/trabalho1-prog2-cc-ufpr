@@ -194,8 +194,8 @@ int parse_pixels_P3(FILE *imgfile, ppmimage_t *ppmimg)
 int parse_pixels_P6(FILE *imgfile, ppmimage_t *ppmimg)
 {
     int line, col, ret;
-    unsigned char *channel_rgb = (unsigned char *)malloc(sizeof(unsigned char) * 3);
-    ret = fread(channel_rgb, sizeof(unsigned char), 3, imgfile);
+    byte *channel_rgb = (byte *)malloc(sizeof(byte) * 3);
+    ret = fread(channel_rgb, sizeof(byte), 3, imgfile);
     for (line = 0; line < ppmimg->height && !feof(imgfile); line++)
     {
         for (col = 0; col < ppmimg->width && !feof(imgfile); col++)
@@ -218,7 +218,7 @@ int parse_pixels_P6(FILE *imgfile, ppmimage_t *ppmimg)
             ppmimg->mean_green += (channel_rgb[1] * channel_rgb[1]);
             ppmimg->mean_blue += (channel_rgb[2] * channel_rgb[2]);
 
-            ret = fread(channel_rgb, sizeof(unsigned char), 3, imgfile);
+            ret = fread(channel_rgb, sizeof(byte), 3, imgfile);
         }
     }
     free(channel_rgb);
