@@ -8,33 +8,38 @@
 
 #include "ppmimage.h"
 
-void parse_ppmimage(FILE *imgfile, ppmimage_t *ppmimg)
+int read_ppmimage(FILE *imgfile, ppmimage_t *ppmimg)
 {
     /* === Alocação em memória e parsing do cabeçalho === */
-    parse_header(imgfile, ppmimg);
+    if(parse_header(imgfile, ppmimg))
+        return 1;
 
     /* === Alocação em memória e parsing dos pixels === */
-    alloc_pixels(imgfile, ppmimg);
+    if (alloc_pixels(imgfile, ppmimg))
+        return 1;
+
+    return 0;
 }
 
-void parse_header(FILE *imgfile, ppmimage_t *ppmimg)
+int parse_header(FILE *imgfile, ppmimage_t *ppmimg)
 {
     char *str = (char *)malloc(sizeof(char) * (MAX_SIZE_STR + 1));
     if (!str)
     {
         fprintf(stderr, "Memory allocation error! - 'char *str' -> parse_ppmimage\n");
-        exit(1);
+        return 1;
     }
 
     /* Lê e verifica o tipo da imagem PPM. */
     int ret = fscanf(imgfile, "%s", str);
     if (ret < 1 || (strcmp(str, "P3") && strcmp(str, "P6")))
     {
-        fclose(imgfile);
+        if(imgfile != stdin)
+            fclose(imgfile);
         free(str);
         str = NULL;
         fprintf(stderr, "Error: this is not a PPM image type\n");
-        exit(1);
+        return 1;
     }
     /* Consome um 'whitespace' - separador genérico. */
     fgetc(imgfile);
@@ -43,11 +48,12 @@ void parse_header(FILE *imgfile, ppmimage_t *ppmimg)
     ppmimg->type = (char *)malloc(sizeof(char) * (MAX_SIZE_PPM_TYPE_STR + 1));
     if (!ppmimg->type)
     {
-        fclose(imgfile);
+        if(imgfile != stdin)
+            fclose(imgfile);
         free(str);
         str = NULL;
         fprintf(stderr, "Memory allocation error! - 'ppmimg->type' -> parse_ppmimage\n");
-        exit(1);
+        return 1;
     }
     strcpy(ppmimg->type, str);
 
@@ -81,11 +87,12 @@ void parse_header(FILE *imgfile, ppmimage_t *ppmimg)
         }
         if (!ret)
         {
-            fclose(imgfile);
+            if(imgfile != stdin)
+                fclose(imgfile);
             free(ppmimg->type);
             ppmimg->type = NULL;
             fprintf(stderr, "Error reading header\n");
-            exit(1);
+            return 1;
         }
         /* Consome um 'whitespace' - separador genérico. */
         fgetc(imgfile);
@@ -95,19 +102,22 @@ void parse_header(FILE *imgfile, ppmimage_t *ppmimg)
     while (fgetc(imgfile) == '#')
         while (fgetc(imgfile) != '\n');
     fseek(imgfile, -1, SEEK_CUR);
+
+    return 0;
 }
 
-void alloc_pixels(FILE *imgfile, ppmimage_t *ppmimg)
+int alloc_pixels(FILE *imgfile, ppmimage_t *ppmimg)
 {
     /* === Tratamento rigoroso para alocar memória para a imagem === */
     ppmimg->img = (pixel_t **)malloc(sizeof(pixel_t *) * ppmimg->height);
     if (!ppmimg->img)
     {
-        fclose(imgfile);
+        if(imgfile != stdin)
+            fclose(imgfile);
         free(ppmimg->type);
         ppmimg->type = NULL;
         fprintf(stderr, "Memory allocation error! - 'ppmimg->img' -> parse_pixels\n");
-        exit(1);
+        return 1;
     }
 
     int line;
@@ -116,7 +126,8 @@ void alloc_pixels(FILE *imgfile, ppmimage_t *ppmimg)
         ppmimg->img[line] = (pixel_t *)malloc(sizeof(pixel_t) * ppmimg->width);
         if (!ppmimg->img[line])
         {
-            fclose(imgfile);
+            if(imgfile != stdin)
+                fclose(imgfile);
             free(ppmimg->type);
             ppmimg->type = NULL;
             while (line--)
@@ -127,7 +138,7 @@ void alloc_pixels(FILE *imgfile, ppmimage_t *ppmimg)
             free(ppmimg->img);
             ppmimg->img = NULL;
             fprintf(stderr, "Memory allocation error! - 'ppmimg->img[pixel]' -> parse_line\n");
-            exit(1);
+            return 1;
         }
     }
 
@@ -146,9 +157,11 @@ void alloc_pixels(FILE *imgfile, ppmimage_t *ppmimg)
     ppmimg->mean_red = sqrtf(ppmimg->mean_red / num_pixels);
     ppmimg->mean_green = sqrtf(ppmimg->mean_green / num_pixels);
     ppmimg->mean_blue = sqrtf(ppmimg->mean_blue / num_pixels);
+
+    return 0;
 }
 
-void parse_pixels_P3(FILE *imgfile, ppmimage_t *ppmimg)
+int parse_pixels_P3(FILE *imgfile, ppmimage_t *ppmimg)
 {
     int red, green, blue, line, col, ret;
     ret = fscanf(imgfile, "%i %i %i", &red, &green, &blue);
@@ -158,10 +171,11 @@ void parse_pixels_P3(FILE *imgfile, ppmimage_t *ppmimg)
         {
             if (ret < 3)
             {
-                fclose(imgfile);
+                if(imgfile != stdin)
+                    fclose(imgfile);
                 free_ppmimage(ppmimg);
                 fprintf(stderr, "Error reading a pixel\n");
-                exit(1);
+                return 1;
             }
             ppmimg->img[line][col].red = red;
             ppmimg->img[line][col].green = green;
@@ -174,9 +188,10 @@ void parse_pixels_P3(FILE *imgfile, ppmimage_t *ppmimg)
             ret = fscanf(imgfile, "%i %i %i", &red, &green, &blue);
         }
     }
+    return 0;
 }
 
-void parse_pixels_P6(FILE *imgfile, ppmimage_t *ppmimg)
+int parse_pixels_P6(FILE *imgfile, ppmimage_t *ppmimg)
 {
     int line, col, ret;
     unsigned char *channel_rgb = (unsigned char *)malloc(sizeof(unsigned char) * 3);
@@ -187,12 +202,13 @@ void parse_pixels_P6(FILE *imgfile, ppmimage_t *ppmimg)
         {
             if (ret < 3)
             {
-                fclose(imgfile);
+                if(imgfile != stdin)
+                    fclose(imgfile);
                 free_ppmimage(ppmimg);
                 free(channel_rgb);
                 channel_rgb = NULL;
                 fprintf(stderr, "Error reading a pixel\n");
-                exit(1);
+                return 1;
             }
             ppmimg->img[line][col].red = channel_rgb[0];
             ppmimg->img[line][col].green = channel_rgb[1];
@@ -207,6 +223,8 @@ void parse_pixels_P6(FILE *imgfile, ppmimage_t *ppmimg)
     }
     free(channel_rgb);
     channel_rgb = NULL;
+
+    return 0;
 }
 
 void free_ppmimage(ppmimage_t *ppmimg)

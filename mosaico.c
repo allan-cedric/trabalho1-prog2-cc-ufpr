@@ -16,7 +16,13 @@ int main(int argc, char **argv)
     opt_args.output_filename = NULL;
     opt_args.directory_filename = NULL;
 
-    /* Armazena o nome do diretório atual */
+    /* 
+        Parsing da linha de comando. 
+        Os argumentos das opções da linha de comando vão ser apontados por 'opt_args'.
+    */
+    parse_opt(argc, argv, &opt_args);
+
+    /* Armazena o nome do diretório atual. */
     char *main_dir;
     main_dir = getcwd(NULL, 0);
     if (!main_dir)
@@ -24,12 +30,6 @@ int main(int argc, char **argv)
         fprintf(stderr, "Error determining current directory\n");
         exit(1);
     }
-
-    /* 
-        Parsing da linha de comando. 
-        Os argumentos das opções da linha de comando são armazenados 'opt_args'.
-    */
-    parse_opt(argc, argv, &opt_args);
 
     /* Parsing do diretório de pastilhas. */
     int num_dir_files;
@@ -43,7 +43,7 @@ int main(int argc, char **argv)
     {
         free(main_dir);
         main_dir = NULL;
-        fprintf(stderr, "Error reading tiles directory\n");
+        fprintf(stderr, "Error parsing tiles directory\n");
         exit(1);
     }
 
@@ -64,7 +64,7 @@ int main(int argc, char **argv)
         }
         free(dir_files);
         dir_files = NULL;
-        fprintf(stderr, "Error accessing directory\n");
+        fprintf(stderr, "Error accessing tiles directory\n");
         exit(1);
     }
 
@@ -85,16 +85,17 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    /* Alocação de memória das pastilhas */
+    /* Leitura e alocação de memória das pastilhas. */
     if (opt_args.directory_filename)
         fprintf(stderr, "Reading tiles from %s and calculating tiles' average colors...\n", opt_args.directory_filename);
     else
         fprintf(stderr, "Reading tiles from %s and calculating tiles' average colors...\n", STD_DIR);
     int i;
+    FILE *imgfile;
     for (i = 0; i < num_dir_files; i++)
     {
-        FILE *imgfile = fopen(dir_files[i]->d_name, "r");
-        if (!imgfile)
+        imgfile = fopen(dir_files[i]->d_name, "r");
+        if (!imgfile || read_ppmimage(imgfile, &(tiles[i])))
         {
             free(main_dir);
             main_dir = NULL;
@@ -112,10 +113,9 @@ int main(int argc, char **argv)
                 free_ppmimage(&(tiles[i]));
             free(tiles);
             tiles = NULL;
-            fprintf(stderr, "Error opening a PPM image\n");
+            fprintf(stderr, "Error opening a PPM tile\n");
             exit(1);
         }
-        parse_ppmimage(imgfile, &(tiles[i]));
         fclose(imgfile);
         free(dir_files[i]);
         dir_files[i] = NULL;
@@ -123,10 +123,12 @@ int main(int argc, char **argv)
     free(dir_files);
     dir_files = NULL;
 
+    /* Metadados das pastilhas */
     fprintf(stderr, "%i tiles read\n", num_dir_files);
     fprintf(stderr, "Tile size is %ix%i\n", tiles[0].width, tiles[0].height);
 
-    ret = chdir(opt_args.directory_filename);
+    /* Volta para o diretório principal. */
+    ret = chdir(main_dir);
     if (ret == -1)
     {
         free(main_dir);
@@ -135,48 +137,42 @@ int main(int argc, char **argv)
             free_ppmimage(&tiles[num_dir_files]);
         free(tiles);
         tiles = NULL;
-        fprintf(stderr, "Error accessing directory\n");
+        fprintf(stderr, "Error accessing main directory\n");
         exit(1);
     }
-
-    /* Desalocação de memória das últimas estruturas. */
     free(main_dir);
     main_dir = NULL;
+
+    /* Imagem PPM de entrada */
+    ppmimage_t input_ppmimg;
+    if (opt_args.input_filename)
+        imgfile = fopen(opt_args.input_filename, "r");
+    else
+        imgfile = stdin;
+
+    fprintf(stderr, "Reading input image...\n");
+    if (!imgfile || read_ppmimage(imgfile, &input_ppmimg))
+    {
+        while (num_dir_files--)
+            free_ppmimage(&tiles[num_dir_files]);
+        free(tiles);
+        tiles = NULL;
+        fprintf(stderr, "Error opening input image\n");
+        exit(1);
+    }
+    fprintf(stderr, "Input image is PPM %s, %ix%i pixels\n", input_ppmimg.type, input_ppmimg.width, input_ppmimg.height);
+
+    if (opt_args.input_filename)
+        fclose(imgfile);
+
+    /* Geração do fotomosaico */
+
+    /* Desalocação de memória das últimas estruturas. */
     while (num_dir_files--)
         free_ppmimage(&tiles[num_dir_files]);
     free(tiles);
     tiles = NULL;
-
-    /*FILE *ppm_img = fopen(opt_args.directory_filename, "r");
-    if (!ppm_img)
-    {
-        fprintf(stderr, "Error opening PPM image\n");
-        exit(1);
-    }
-
-    ppmimage_t* ppm_test = (ppmimage_t *)malloc(sizeof(ppmimage_t) * 10);
-    int i;
-    for(i = 0; i < 10; i++)
-    {
-        ppm_test[i].type = NULL;
-        ppm_test[i].img = NULL;
-    }
-
-    parse_ppmimage(ppm_img, &ppm_test[0]);
-    fclose(ppm_img);
-
-    printf("Type: %s\n", ppm_test[0].type);
-    printf("Width: %i\n", ppm_test[0].width);
-    printf("Height: %i\n", ppm_test[0].height);
-    printf("Channel max value: %i\n", ppm_test[0].channel_max_value);
-    printf("Mean red: %.2f\n", ppm_test[0].mean_red);
-    printf("Mean green: %.2f\n", ppm_test[0].mean_green); 
-    printf("Mean blue: %.2f\n", ppm_test[0].mean_blue);  
-
-    for(i = 0; i < 10; i++)
-        free_ppmimage(&ppm_test[i]);
-    free(ppm_test);
-    ppm_test = NULL;*/
+    free_ppmimage(&input_ppmimg);
 
     return 0;
 }

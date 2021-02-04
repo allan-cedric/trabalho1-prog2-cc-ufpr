@@ -47,29 +47,29 @@ typedef struct ppmimage_t
 } ppmimage_t;
 
 /*
-    Realiza o parsing e a alocação de memória de uma imagem do tipo PPM.
+    Realiza a leitura e a alocação de memória de uma imagem do tipo PPM.
 */
-void parse_ppmimage(FILE *imgfile, ppmimage_t *ppmimg);
+int read_ppmimage(FILE *imgfile, ppmimage_t *ppmimg);
 
 /*
     Realiza o parsing do cabeçalho de uma imagem do tipo PPM.
 */
-void parse_header(FILE* imgfile, ppmimage_t *ppmimg);
+int parse_header(FILE* imgfile, ppmimage_t *ppmimg);
 
 /*
     Realiza a alocação de memória dos pixels de uma imagem do tipo PPM.
 */
-void alloc_pixels(FILE* imgfile, ppmimage_t *ppmimg);
+int alloc_pixels(FILE* imgfile, ppmimage_t *ppmimg);
 
 /*
     Realiza o parsing dos pixels de uma imagem do tipo PPM P3.
 */
-void parse_pixels_P3(FILE* imgfile, ppmimage_t *ppmimg);
+int parse_pixels_P3(FILE* imgfile, ppmimage_t *ppmimg);
 
 /*
     Realiza o parsing dos pixels de uma imagem do tipo PPM P6.
 */
-void parse_pixels_P6(FILE* imgfile, ppmimage_t *ppmimg);
+int parse_pixels_P6(FILE* imgfile, ppmimage_t *ppmimg);
 
 /*
     Desaloca a memória reservada para uma imagem do tipo PPM.
