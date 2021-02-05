@@ -98,11 +98,6 @@ int parse_header(FILE *imgfile, ppmimage_t *ppmimg)
         fgetc(imgfile);
     }
 
-    /* Ignora os comentários. */
-    while (fgetc(imgfile) == '#')
-        while (fgetc(imgfile) != '\n');
-    fseek(imgfile, -1, SEEK_CUR);
-
     return 0;
 }
 
