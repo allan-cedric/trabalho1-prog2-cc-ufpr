@@ -67,8 +67,7 @@ int parse_header(FILE *imgfile, ppmimage_t *ppmimg)
     {
         /* Ignora os comentários. */
         while (fgetc(imgfile) == '#')
-            while (fgetc(imgfile) != '\n')
-                ;
+            while (fgetc(imgfile) != '\n');
         fseek(imgfile, -1, SEEK_CUR);
 
         /* Chavea qual dado vai ser armazenado, seguindo a ordem feita no formarto PPM. */
@@ -101,8 +100,7 @@ int parse_header(FILE *imgfile, ppmimage_t *ppmimg)
 
     /* Ignora os comentários. */
     while (fgetc(imgfile) == '#')
-        while (fgetc(imgfile) != '\n')
-            ;
+        while (fgetc(imgfile) != '\n');
     fseek(imgfile, -1, SEEK_CUR);
 
     return 0;
@@ -141,6 +139,13 @@ int alloc_pixels(FILE *imgfile, ppmimage_t *ppmimg)
             ppmimg->img = NULL;
             fprintf(stderr, "Memory allocation error! - 'ppmimg->img[pixel]' -> parse_line\n");
             return 1;
+        }
+        int i;
+        for(i = 0; i < ppmimg->width; i++)
+        {
+            ppmimg->img[line][i].red = 0;
+            ppmimg->img[line][i].green = 0;
+            ppmimg->img[line][i].blue = 0;
         }
     }
 
@@ -207,6 +212,14 @@ int parse_pixels_P6(FILE *imgfile, ppmimage_t *ppmimg)
 {
     int line, col, ret;
     byte *channel_rgb = (byte *)malloc(sizeof(byte) * 3);
+    if (!channel_rgb)
+    {
+        if (imgfile != stdin)
+            fclose(imgfile);
+        free_ppmimage(ppmimg);
+        fprintf(stderr, "Memory allocation error!\n");
+        return 1;
+    }
     ret = fread(channel_rgb, sizeof(byte), 3, imgfile);
     for (line = 0; line < ppmimg->height && !feof(imgfile); line++)
     {
@@ -342,13 +355,20 @@ int write_ppmimage(ppmimage_t *ppmimg, FILE *imgfile)
     }
     else
     {
+        int ret;
         for (i = 0; i < ppmimg->height; i++)
         {
             for (j = 0; j < ppmimg->width; j++)
             {
-                fwrite(&(ppmimg->img[i][j].red), sizeof(byte), 1, imgfile);
-                fwrite(&(ppmimg->img[i][j].green), sizeof(byte), 1, imgfile);
-                fwrite(&(ppmimg->img[i][j].blue), sizeof(byte), 1, imgfile);
+                ret = 0;
+                ret = fwrite(&(ppmimg->img[i][j].red), sizeof(byte), 1, imgfile);
+                ret += fwrite(&(ppmimg->img[i][j].green), sizeof(byte), 1, imgfile);
+                ret += fwrite(&(ppmimg->img[i][j].blue), sizeof(byte), 1, imgfile);
+                if(ret != 3)
+                {
+                    fprintf(stderr, "Error writing file\n");
+                    return 1;
+                }
             }
         }
     }
