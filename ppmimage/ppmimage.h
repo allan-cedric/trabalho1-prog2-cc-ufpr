@@ -42,7 +42,7 @@ typedef struct ppmimage_t
 {
     char *type;
     int width, height, channel_max_value;
-    float mean_red, mean_green, mean_blue;
+    float* dominant_color_rgb;
     pixel_t **img;
 } ppmimage_t;
 
@@ -75,5 +75,24 @@ int parse_pixels_P6(FILE* imgfile, ppmimage_t *ppmimg);
     Desaloca a memória reservada para uma imagem do tipo PPM.
 */
 void free_ppmimage(ppmimage_t *ppmimg);
+
+/*
+    Cálculo da cor predominante de uma imagem PPM. (Utiliza o método da raiz quadrada das médias). 
+*/
+void dominant_color_ppmimage(ppmimage_t *ppmimg, int init_lin, int init_col, int offset_lin, int offset_col, float* dominant_color_rgb);
+
+/*
+    Realiza a distância entre duas cores formatadas no padrão RGB.
+*/
+float approx_redmean(float *rgb_1, float *rgb_2);
+/*
+    Altera uma certa matriz de uma imagem PPM por uma outra imagem PPM. 
+*/
+void change_submatrix_ppmimage(ppmimage_t *main_ppmimg, int init_lin, int init_col, ppmimage_t *ppmimg);
+
+/*
+    Escreve um novo arquivo PPM a partir de uma imagem PPM alocada em memória.
+*/
+int write_ppmimage(ppmimage_t *ppmimg, FILE* imgfile);
 
 #endif
