@@ -30,9 +30,9 @@ int parse_header(FILE *imgfile, ppmimage_t *ppmimg)
         return 1;
     }
 
-    /* Lê e verifica o tipo da imagem PPM. */
+    /* === Lê e verifica o tipo da imagem PPM === */
     int ret = fscanf(imgfile, "%s", str);
-    if (ret < 1 || (strcmp(str, "P3") && strcmp(str, "P6")))
+    if (ret != 1 || (strcmp(str, "P3") && strcmp(str, "P6")))
     {
         if (imgfile != stdin)
             fclose(imgfile);
@@ -41,10 +41,10 @@ int parse_header(FILE *imgfile, ppmimage_t *ppmimg)
         fprintf(stderr, "Error: this is not a PPM image type\n");
         return 1;
     }
-    /* Consome um 'whitespace' - separador genérico. */
+    /* === Consome um 'whitespace' - separador genérico === */
     fgetc(imgfile);
 
-    /* Armazena o tipo da imagem */
+    /* === Armazena o tipo da imagem === */
     ppmimg->type = (char *)malloc(sizeof(char) * (MAX_SIZE_PPM_TYPE_STR + 1));
     if (!ppmimg->type)
     {
@@ -57,35 +57,38 @@ int parse_header(FILE *imgfile, ppmimage_t *ppmimg)
     }
     strcpy(ppmimg->type, str);
 
-    /* Libera memória do buffer que armazenava o tipo de imagem. */
+    /* === Libera memória do buffer que armazenava o tipo de imagem === */
     free(str);
     str = NULL;
 
-    /* Parsing realizado para obter a largura, altura e o valor máximo de um canal RGB. */
-    int search_value;
-    for (search_value = 0; search_value < 3; search_value++)
+    /* === Parsing realizado para obter a largura, altura e o valor máximo de um canal RGB === */
+    int search_value = 0;
+    while (search_value < 3)
     {
-        /* Ignora os comentários. */
+        /* === Ignora os comentários. === */
         while (fgetc(imgfile) == '#')
             while (fgetc(imgfile) != '\n');
         fseek(imgfile, -1, SEEK_CUR);
 
-        /* Chavea qual dado vai ser armazenado, seguindo a ordem feita no formarto PPM. */
+        /* === Chavea qual dado vai ser armazenado, seguindo a ordem feita no formarto PPM === */
         switch (search_value)
         {
-        case 0:
-            ret = fscanf(imgfile, "%i", &ppmimg->width);
-            break;
-        case 1:
-            ret = fscanf(imgfile, "%i", &ppmimg->height);
-            break;
-        case 2:
-            ret = fscanf(imgfile, "%i", &ppmimg->channel_max_value);
-            break;
-        default:
-            break;
+            case 0:
+                ret = fscanf(imgfile, "%i", &ppmimg->width);
+                search_value++;
+                break;
+            case 1:
+                ret = fscanf(imgfile, "%i", &ppmimg->height);
+                search_value++;
+                break;
+            case 2:
+                ret = fscanf(imgfile, "%i", &ppmimg->channel_max_value);
+                search_value++;
+                break;
+            default:
+                break;
         }
-        if (!ret)
+        if (ret != 1)
         {
             if (imgfile != stdin)
                 fclose(imgfile);
@@ -94,7 +97,7 @@ int parse_header(FILE *imgfile, ppmimage_t *ppmimg)
             fprintf(stderr, "Error reading header\n");
             return 1;
         }
-        /* Consome um 'whitespace' - separador genérico. */
+        /* === Consome um 'whitespace' - separador genérico === */
         fgetc(imgfile);
     }
 
@@ -103,7 +106,7 @@ int parse_header(FILE *imgfile, ppmimage_t *ppmimg)
 
 int alloc_pixels(FILE *imgfile, ppmimage_t *ppmimg)
 {
-    /* === Tratamento rigoroso para alocar memória para a imagem === */
+    /* === Tratamento para alocar memória para a imagem === */
     ppmimg->img = (pixel_t **)malloc(sizeof(pixel_t *) * ppmimg->height);
     if (!ppmimg->img)
     {
@@ -136,7 +139,7 @@ int alloc_pixels(FILE *imgfile, ppmimage_t *ppmimg)
             return 1;
         }
         int i;
-        for(i = 0; i < ppmimg->width; i++)
+        for (i = 0; i < ppmimg->width; i++)
         {
             ppmimg->img[line][i].red = 0;
             ppmimg->img[line][i].green = 0;
@@ -144,7 +147,7 @@ int alloc_pixels(FILE *imgfile, ppmimage_t *ppmimg)
         }
     }
 
-    /* === Leitura dos pixels === */
+    /* === Aloca memória para as componentes RGB da cor predominante === */
     ppmimg->dominant_color_rgb = (float *)malloc(sizeof(float) * 3);
     if (!ppmimg->dominant_color_rgb)
     {
@@ -155,10 +158,11 @@ int alloc_pixels(FILE *imgfile, ppmimage_t *ppmimg)
         return 1;
     }
 
-    ppmimg->dominant_color_rgb[0] = 0;
-    ppmimg->dominant_color_rgb[1] = 0;
-    ppmimg->dominant_color_rgb[2] = 0;
+    ppmimg->dominant_color_rgb[RED] = 0;
+    ppmimg->dominant_color_rgb[GREEN] = 0;
+    ppmimg->dominant_color_rgb[BLUE] = 0;
 
+    /* === Parsing dos pixels === */
     if (!strcmp(ppmimg->type, "P3"))
         parse_pixels_P3(imgfile, ppmimg);
     else
@@ -166,9 +170,9 @@ int alloc_pixels(FILE *imgfile, ppmimage_t *ppmimg)
 
     /* === Cálculo da cor predominante === */
     int num_pixels = (ppmimg->width * ppmimg->height);
-    ppmimg->dominant_color_rgb[0] = sqrtf(ppmimg->dominant_color_rgb[0] / num_pixels);
-    ppmimg->dominant_color_rgb[1] = sqrtf(ppmimg->dominant_color_rgb[1] / num_pixels);
-    ppmimg->dominant_color_rgb[2] = sqrtf(ppmimg->dominant_color_rgb[2] / num_pixels);
+    ppmimg->dominant_color_rgb[RED] = sqrtf(ppmimg->dominant_color_rgb[RED] / num_pixels);
+    ppmimg->dominant_color_rgb[GREEN] = sqrtf(ppmimg->dominant_color_rgb[GREEN] / num_pixels);
+    ppmimg->dominant_color_rgb[BLUE] = sqrtf(ppmimg->dominant_color_rgb[BLUE] / num_pixels);
 
     return 0;
 }
@@ -181,7 +185,7 @@ int parse_pixels_P3(FILE *imgfile, ppmimage_t *ppmimg)
     {
         for (col = 0; col < ppmimg->width && ret != EOF; col++)
         {
-            if (ret < 3)
+            if (ret != 3)
             {
                 if (imgfile != stdin)
                     fclose(imgfile);
@@ -193,9 +197,9 @@ int parse_pixels_P3(FILE *imgfile, ppmimage_t *ppmimg)
             ppmimg->img[line][col].green = green;
             ppmimg->img[line][col].blue = blue;
 
-            ppmimg->dominant_color_rgb[0] += (red * red);
-            ppmimg->dominant_color_rgb[1] += (green * green);
-            ppmimg->dominant_color_rgb[2] += (blue * blue);
+            ppmimg->dominant_color_rgb[RED] += (red * red);
+            ppmimg->dominant_color_rgb[GREEN] += (green * green);
+            ppmimg->dominant_color_rgb[BLUE] += (blue * blue);
 
             ret = fscanf(imgfile, "%i %i %i", &red, &green, &blue);
         }
@@ -220,7 +224,7 @@ int parse_pixels_P6(FILE *imgfile, ppmimage_t *ppmimg)
     {
         for (col = 0; col < ppmimg->width && !feof(imgfile); col++)
         {
-            if (ret < 3)
+            if (ret != 3)
             {
                 if (imgfile != stdin)
                     fclose(imgfile);
@@ -230,13 +234,13 @@ int parse_pixels_P6(FILE *imgfile, ppmimage_t *ppmimg)
                 fprintf(stderr, "Error reading a pixel\n");
                 return 1;
             }
-            ppmimg->img[line][col].red = channel_rgb[0];
-            ppmimg->img[line][col].green = channel_rgb[1];
-            ppmimg->img[line][col].blue = channel_rgb[2];
+            ppmimg->img[line][col].red = channel_rgb[RED];
+            ppmimg->img[line][col].green = channel_rgb[GREEN];
+            ppmimg->img[line][col].blue = channel_rgb[BLUE];
 
-            ppmimg->dominant_color_rgb[0] += (channel_rgb[0] * channel_rgb[0]);
-            ppmimg->dominant_color_rgb[1] += (channel_rgb[1] * channel_rgb[1]);
-            ppmimg->dominant_color_rgb[2] += (channel_rgb[2] * channel_rgb[2]);
+            ppmimg->dominant_color_rgb[RED] += (channel_rgb[RED] * channel_rgb[RED]);
+            ppmimg->dominant_color_rgb[GREEN] += (channel_rgb[GREEN] * channel_rgb[GREEN]);
+            ppmimg->dominant_color_rgb[BLUE] += (channel_rgb[BLUE] * channel_rgb[BLUE]);
 
             ret = fread(channel_rgb, sizeof(byte), 3, imgfile);
         }
@@ -292,9 +296,9 @@ void dominant_color_ppmimage(ppmimage_t *ppmimg, int init_lin, int init_col, int
     }
 
     int num_pixels = (offset_lin * offset_col);
-    dominant_color_rgb[0] = sqrtf(dominant_color_rgb[0] / num_pixels);
-    dominant_color_rgb[1] = sqrtf(dominant_color_rgb[1] / num_pixels);
-    dominant_color_rgb[2] = sqrtf(dominant_color_rgb[2] / num_pixels);
+    dominant_color_rgb[RED] = sqrtf(dominant_color_rgb[RED] / num_pixels);
+    dominant_color_rgb[GREEN] = sqrtf(dominant_color_rgb[GREEN] / num_pixels);
+    dominant_color_rgb[BLUE] = sqrtf(dominant_color_rgb[BLUE] / num_pixels);
 }
 
 float approx_redmean(float *rgb_1, float *rgb_2)
@@ -311,7 +315,7 @@ float approx_redmean(float *rgb_1, float *rgb_2)
 
 void change_submatrix_ppmimage(ppmimage_t *main_ppmimg, int init_lin, int init_col, ppmimage_t *ppmimg)
 {
-    /* Mudança de uma submatriz de ordem ppmimg->width da imagem principal. */
+    /* === Muda os valores de uma submatriz de ordem 'ppmimg->height X ppmimg->width' da imagem principal === */
     int main_lin, main_col, lin, col;
     for (main_lin = init_lin, lin = 0; main_lin < init_lin + ppmimg->height; main_lin++, lin++)
     {
@@ -329,43 +333,93 @@ void change_submatrix_ppmimage(ppmimage_t *main_ppmimg, int init_lin, int init_c
 
 int write_ppmimage(ppmimage_t *ppmimg, FILE *imgfile)
 {
-    /* Tipo da imagem PPM. */
-    fprintf(imgfile, "%s\n", ppmimg->type);
+    /* === Tipo da imagem PPM === */
+    int ret;
+    ret = fprintf(imgfile, "%s\n", ppmimg->type);
+    if (ret < 0)
+    {
+        if (imgfile != stdout)
+            fclose(imgfile);
+        free_ppmimage(ppmimg);
+        fprintf(stderr, "Error writing file\n");
+        return 1;
+    }
 
-    /* Comentário básico. */
-    fprintf(imgfile, "# Created by mosaico program\n");
+    /* === Comentário básico === */
+    ret = fprintf(imgfile, "# Created by mosaico program\n");
+    if (ret < 0)
+    {
+        if (imgfile != stdout)
+            fclose(imgfile);
+        free_ppmimage(ppmimg);
+        fprintf(stderr, "Error writing file\n");
+        return 1;
+    }
 
-    /* Largura, comprimento e valor máximo de um canal RGB. */
-    fprintf(imgfile, "%i %i\n%i\n", ppmimg->width, ppmimg->height, ppmimg->channel_max_value);
+    /* === Largura, comprimento e valor máximo de um canal RGB === */
+    ret = fprintf(imgfile, "%i %i\n%i\n", ppmimg->width, ppmimg->height, ppmimg->channel_max_value);
+    if (ret < 0)
+    {
+        if (imgfile != stdout)
+            fclose(imgfile);
+        free_ppmimage(ppmimg);
+        fprintf(stderr, "Error writing file\n");
+        return 1;
+    }
 
+    /* === Escrita dos pixels === */
     int i, j;
-    /* Escrevendo os pixels */
     if (!strcmp(ppmimg->type, "P3"))
     {
         for (i = 0; i < ppmimg->height; i++)
         {
             for (j = 0; j < ppmimg->width; j++)
-                fprintf(imgfile, "%i\n%i\n%i\n", ppmimg->img[i][j].red, ppmimg->img[i][j].green, ppmimg->img[i][j].blue);
-        }
-    }
-    else
-    {
-        int ret;
-        for (i = 0; i < ppmimg->height; i++)
-        {
-            for (j = 0; j < ppmimg->width; j++)
             {
-                ret = 0;
-                ret = fwrite(&(ppmimg->img[i][j].red), sizeof(byte), 1, imgfile);
-                ret += fwrite(&(ppmimg->img[i][j].green), sizeof(byte), 1, imgfile);
-                ret += fwrite(&(ppmimg->img[i][j].blue), sizeof(byte), 1, imgfile);
-                if(ret != 3)
+                ret = fprintf(imgfile, "%i\n%i\n%i\n", ppmimg->img[i][j].red, ppmimg->img[i][j].green, ppmimg->img[i][j].blue);
+                if (ret < 0)
                 {
+                    if (imgfile != stdout)
+                        fclose(imgfile);
+                    free_ppmimage(ppmimg);
                     fprintf(stderr, "Error writing file\n");
                     return 1;
                 }
             }
         }
+    }
+    else
+    {
+        byte *channel_rgb = (byte *)malloc(sizeof(byte) * 3);
+        if (!channel_rgb)
+        {
+            if (imgfile != stdout)
+                fclose(imgfile);
+            free_ppmimage(ppmimg);
+            fprintf(stderr, "Memory allocation error!\n");
+            return 1;
+        }
+        for (i = 0; i < ppmimg->height; i++)
+        {
+            for (j = 0; j < ppmimg->width; j++)
+            {
+                channel_rgb[RED] = ppmimg->img[i][j].red;
+                channel_rgb[GREEN] = ppmimg->img[i][j].green;
+                channel_rgb[BLUE] = ppmimg->img[i][j].blue;
+                ret = fwrite(channel_rgb, sizeof(byte), 3, imgfile);
+                if (ret != 3)
+                {
+                    if (imgfile != stdout)
+                        fclose(imgfile);
+                    free_ppmimage(ppmimg);
+                    free(channel_rgb);
+                    channel_rgb = NULL;
+                    fprintf(stderr, "Error writing file\n");
+                    return 1;
+                }
+            }
+        }
+        free(channel_rgb);
+        channel_rgb = NULL;
     }
     return 0;
 }

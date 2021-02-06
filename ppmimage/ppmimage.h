@@ -19,6 +19,10 @@
 #define MAX_SIZE_STR 100
 #define MAX_SIZE_PPM_TYPE_STR 2
 
+#define RED 0
+#define GREEN 1
+#define BLUE 2
+
 
 /*
     Nomenclatura para facilitar.

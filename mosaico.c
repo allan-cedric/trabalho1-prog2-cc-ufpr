@@ -1,3 +1,7 @@
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include "parsing/parsing.h"
 #include "ppmimage/ppmimage.h"
 #include <sys/types.h>
@@ -95,22 +99,20 @@ int main(int argc, char **argv)
     for (i = 0; i < num_dir_files; i++)
     {
         imgfile = fopen(dir_files[i]->d_name, "r");
-        if (!imgfile || read_ppmimage(imgfile, &(tiles[i])))
+        if (!imgfile || read_ppmimage(imgfile, &tiles[i]))
         {
             free(main_dir);
             main_dir = NULL;
-            while (num_dir_files--)
+            int j;
+            for (j = i; j < num_dir_files; j++)
             {
-                if (dir_files[num_dir_files])
-                {
-                    free(dir_files[num_dir_files]);
-                    dir_files[num_dir_files] = NULL;
-                }
+                free(dir_files[num_dir_files]);
+                dir_files[num_dir_files] = NULL;
             }
             free(dir_files);
             dir_files = NULL;
             while (i--)
-                free_ppmimage(&(tiles[i]));
+                free_ppmimage(&tiles[i]);
             free(tiles);
             tiles = NULL;
             fprintf(stderr, "Error opening a PPM tile\n");
@@ -129,10 +131,10 @@ int main(int argc, char **argv)
 
     /* Volta para o diretório principal. */
     ret = chdir(main_dir);
+    free(main_dir);
+    main_dir = NULL;
     if (ret == -1)
     {
-        free(main_dir);
-        main_dir = NULL;
         while (num_dir_files--)
             free_ppmimage(&tiles[num_dir_files]);
         free(tiles);
@@ -140,8 +142,6 @@ int main(int argc, char **argv)
         fprintf(stderr, "Error accessing main directory\n");
         exit(1);
     }
-    free(main_dir);
-    main_dir = NULL;
 
     /* Imagem PPM de entrada */
     ppmimage_t input_ppmimg;
@@ -162,17 +162,14 @@ int main(int argc, char **argv)
     }
     fprintf(stderr, "Input image is PPM %s, %ix%i pixels\n", input_ppmimg.type, input_ppmimg.width, input_ppmimg.height);
 
-    if (opt_args.input_filename)
+    if (imgfile != stdin)
         fclose(imgfile);
 
     /* Geração do fotomosaico */
     fprintf(stderr, "Building mosaic image\n");
-    int lin, col, offset_width, offset_height, lim_point_width, lim_point_height;
+    int lin, col, offset_width, offset_height;
     offset_width = tiles[0].width;
     offset_height = tiles[0].height;
-
-    lim_point_width = input_ppmimg.width + (offset_width - (input_ppmimg.width % offset_width));
-    lim_point_height = input_ppmimg.height + (offset_height - (input_ppmimg.height % offset_height));
 
     float *dominant_color_rgb = (float *)malloc(sizeof(float) * 3);
     if (!dominant_color_rgb)
@@ -186,9 +183,9 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    for (lin = 0; lin < lim_point_height; lin += offset_height)
+    for (lin = 0; lin < input_ppmimg.height; lin += offset_height)
     {
-        for (col = 0; col < lim_point_width; col += offset_width)
+        for (col = 0; col < input_ppmimg.width; col += offset_width)
         {
             dominant_color_rgb[0] = 0;
             dominant_color_rgb[1] = 0;
@@ -232,8 +229,10 @@ int main(int argc, char **argv)
     }
 
     fprintf(stderr, "Writing output file\n");
-    write_ppmimage(&input_ppmimg, output_ppmmosaic);
-    if (opt_args.output_filename)
+    if(write_ppmimage(&input_ppmimg, output_ppmmosaic))
+        exit(1);
+
+    if(output_ppmmosaic != stdout)
         fclose(output_ppmmosaic);
 
     /* Desalocação de memória da imagem de entrada. */
