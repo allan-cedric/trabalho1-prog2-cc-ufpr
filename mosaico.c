@@ -1,32 +1,42 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
+/*
+    ===
+    Source file: 'mosaico.c'
+    Autor: Allan Cedric G. B. Alves da Silva
+    Profile: Estudante de Ciência da Computação - UFPR
 
+    Programa que gera um fotomosaico no formato PPM a partir de uma imagem PPM
+    ===
+*/
+
+/* === Bibliotecas === */
 #include "parsing/parsing.h"
 #include "ppmimage/ppmimage.h"
 #include <sys/types.h>
 #include <dirent.h>
 
+/* === Diretório de pastilhas padrão === */
 #define STD_DIR "./tiles"
 
-/* Filtro de imagens do tipo PPM. */
+/*  === Filtro de imagens do tipo PPM (scandir) === */
 int filter_entries(const struct dirent *entry);
 
 int main(int argc, char **argv)
 {
-    /* Inicialização padrão. */
+    /* === Inicialização do buffer de argumentos ===  */
     arguments_t opt_args;
     opt_args.input_filename = NULL;
     opt_args.output_filename = NULL;
     opt_args.directory_filename = NULL;
 
     /* 
+        ===
         Parsing da linha de comando. 
-        Os argumentos das opções da linha de comando vão ser apontados por 'opt_args'.
+        Os argumentos das opções da linha de comando vão ser apontados por 'opt_args'
+        ===
     */
     parse_opt(argc, argv, &opt_args);
 
-    /* Armazena o nome do diretório atual. */
+    /* === Armazena o nome do diretório atual  === */
     char *main_dir;
     main_dir = getcwd(NULL, 0);
     if (!main_dir)
@@ -35,7 +45,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    /* Parsing do diretório de pastilhas. */
+    /* === Listagem/Parsing do diretório de pastilhas === */
     int num_dir_files;
     struct dirent **dir_files;
     if (opt_args.directory_filename)
@@ -51,7 +61,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    /* Muda para o diretório de pastilhas. */
+    /* === Mudança do diretório corrente para o diretório das pastilhas === */
     int ret;
     if (opt_args.directory_filename)
         ret = chdir(opt_args.directory_filename);
@@ -72,7 +82,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    /* Vetor de imagens do tipo PPM. */
+    /* === Alocação do vetor que vai armazenar as pastilhas do formato PPM === */
     ppmimage_t *tiles = (ppmimage_t *)malloc(sizeof(ppmimage_t) * num_dir_files);
     if (!tiles)
     {
@@ -89,13 +99,13 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    /* Leitura e alocação de memória das pastilhas. */
+    /* === Leitura e alocação de memória das pastilhas === */
+    int i;
+    FILE *imgfile;
     if (opt_args.directory_filename)
         fprintf(stderr, "Reading tiles from %s and calculating tiles' average colors...\n", opt_args.directory_filename);
     else
         fprintf(stderr, "Reading tiles from %s and calculating tiles' average colors...\n", STD_DIR);
-    int i;
-    FILE *imgfile;
     for (i = 0; i < num_dir_files; i++)
     {
         imgfile = fopen(dir_files[i]->d_name, "r");
@@ -125,11 +135,11 @@ int main(int argc, char **argv)
     free(dir_files);
     dir_files = NULL;
 
-    /* Metadados das pastilhas */
+    /* === Metadados das pastilhas === */
     fprintf(stderr, "%i tiles read\n", num_dir_files);
     fprintf(stderr, "Tile size is %ix%i\n", tiles[0].width, tiles[0].height);
 
-    /* Volta para o diretório principal. */
+    /* === Retorna a execução do programa para o diretório principal (anterior) === */
     ret = chdir(main_dir);
     free(main_dir);
     main_dir = NULL;
@@ -143,7 +153,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    /* Imagem PPM de entrada */
+    /* === Imagem PPM de entrada === */
     ppmimage_t input_ppmimg;
     if (opt_args.input_filename)
         imgfile = fopen(opt_args.input_filename, "r");
@@ -165,7 +175,7 @@ int main(int argc, char **argv)
     if (imgfile != stdin)
         fclose(imgfile);
 
-    /* Geração do fotomosaico */
+    /* === Geração do fotomosaico === */
     fprintf(stderr, "Building mosaic image\n");
     int lin, col, offset_width, offset_height;
     offset_width = tiles[0].width;
@@ -187,9 +197,9 @@ int main(int argc, char **argv)
     {
         for (col = 0; col < input_ppmimg.width; col += offset_width)
         {
-            dominant_color_rgb[0] = 0;
-            dominant_color_rgb[1] = 0;
-            dominant_color_rgb[2] = 0;
+            dominant_color_rgb[RED] = 0;
+            dominant_color_rgb[GREEN] = 0;
+            dominant_color_rgb[BLUE] = 0;
             dominant_color_ppmimage(&input_ppmimg, lin, col, offset_height, offset_width, dominant_color_rgb);
             int index = 0;
             float small_distance = approx_redmean(dominant_color_rgb, tiles[index].dominant_color_rgb);
@@ -208,13 +218,13 @@ int main(int argc, char **argv)
     free(dominant_color_rgb);
     dominant_color_rgb = NULL;
 
-    /* Desalocação de memória das pastilhas. */
+    /* === Desalocação de memória das pastilhas === */
     while (num_dir_files--)
         free_ppmimage(&tiles[num_dir_files]);
     free(tiles);
     tiles = NULL;
 
-    /* Escrita do fotomosaico em um arquivo PPM */
+    /* === Escrita do fotomosaico em um arquivo PPM === */
     FILE *output_ppmmosaic;
     if (opt_args.output_filename)
         output_ppmmosaic = fopen(opt_args.output_filename, "w");
@@ -229,13 +239,13 @@ int main(int argc, char **argv)
     }
 
     fprintf(stderr, "Writing output file\n");
-    if(write_ppmimage(&input_ppmimg, output_ppmmosaic))
+    if (write_ppmimage(&input_ppmimg, output_ppmmosaic))
         exit(1);
 
-    if(output_ppmmosaic != stdout)
+    if (output_ppmmosaic != stdout)
         fclose(output_ppmmosaic);
 
-    /* Desalocação de memória da imagem de entrada. */
+    /* === Desalocação de memória da imagem de entrada === */
     free_ppmimage(&input_ppmimg);
 
     return 0;

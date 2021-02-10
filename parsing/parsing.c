@@ -1,22 +1,23 @@
 /*
+    ===
     Source file: 'parsing.c'
     Autor: Allan Cedric G. B. Alves da Silva
     Profile: Estudante de Ciência da Computação - UFPR
 
-    Biblioteca que serve para realizar o parsing de opções/argumentos da linha de comando.
+    Biblioteca que serve para realizar o parsing de opções/argumentos da linha de comando
+    ===
 */
 
 #include "parsing.h"
 
 void parse_opt(int argc, char **argv, arguments_t *args)
 {
-    /* Variável adicional para auxiliar durante o parsing */
     char opt;
 
-    /* Permite que o próprio programa trate das mensagens de erro durante o parsing */
+    /* === Permite que o próprio programa trate das mensagens de erro durante o parsing === */
     opterr = 0;
 
-    /* Parsing */
+    /* === Parsing da linha de comando === */
     while ((opt = getopt(argc, argv, "i:o:p:h")) != -1)
     {
         switch (opt)

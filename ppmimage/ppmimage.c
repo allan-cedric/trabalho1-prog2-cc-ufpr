@@ -1,9 +1,11 @@
 /*
+    ===
     Source file: 'ppmimage.c'
     Autor: Allan Cedric G. B. Alves da Silva
     Profile: Estudante de Ciência da Computação - UFPR
 
-    Biblioteca que serve para realizar operações em uma imagem no formato PPM(Portable PixMap).
+    Biblioteca que serve para realizar operações em uma imagem no formato PPM(Portable PixMap)
+    ===
 */
 
 #include "ppmimage.h"
@@ -23,10 +25,11 @@ int read_ppmimage(FILE *imgfile, ppmimage_t *ppmimg)
 
 int parse_header(FILE *imgfile, ppmimage_t *ppmimg)
 {
+    /* === Buffer temporário que armazena o tipo da imagem PPM === */
     char *str = (char *)malloc(sizeof(char) * (MAX_SIZE_STR + 1));
     if (!str)
     {
-        fprintf(stderr, "Memory allocation error! - 'char *str' -> parse_ppmimage\n");
+        fprintf(stderr, "Memory allocation error!\n");
         return 1;
     }
 
@@ -44,7 +47,7 @@ int parse_header(FILE *imgfile, ppmimage_t *ppmimg)
     /* === Consome um 'whitespace' - separador genérico === */
     fgetc(imgfile);
 
-    /* === Armazena o tipo da imagem === */
+    /* === Repassa o tipo da imagem que está no buffer para o local de armazenamento principal === */
     ppmimg->type = (char *)malloc(sizeof(char) * (MAX_SIZE_PPM_TYPE_STR + 1));
     if (!ppmimg->type)
     {
@@ -52,7 +55,7 @@ int parse_header(FILE *imgfile, ppmimage_t *ppmimg)
             fclose(imgfile);
         free(str);
         str = NULL;
-        fprintf(stderr, "Memory allocation error! - 'ppmimg->type' -> parse_ppmimage\n");
+        fprintf(stderr, "Memory allocation error!\n");
         return 1;
     }
     strcpy(ppmimg->type, str);
@@ -106,7 +109,7 @@ int parse_header(FILE *imgfile, ppmimage_t *ppmimg)
 
 int alloc_pixels(FILE *imgfile, ppmimage_t *ppmimg)
 {
-    /* === Tratamento para alocar memória para a imagem === */
+    /* === Tratamento para alocar memória para os pixels da imagem === */
     ppmimg->img = (pixel_t **)malloc(sizeof(pixel_t *) * ppmimg->height);
     if (!ppmimg->img)
     {
@@ -114,7 +117,7 @@ int alloc_pixels(FILE *imgfile, ppmimage_t *ppmimg)
             fclose(imgfile);
         free(ppmimg->type);
         ppmimg->type = NULL;
-        fprintf(stderr, "Memory allocation error! - 'ppmimg->img' -> parse_pixels\n");
+        fprintf(stderr, "Memory allocation error!\n");
         return 1;
     }
 
@@ -135,7 +138,7 @@ int alloc_pixels(FILE *imgfile, ppmimage_t *ppmimg)
             }
             free(ppmimg->img);
             ppmimg->img = NULL;
-            fprintf(stderr, "Memory allocation error! - 'ppmimg->img[pixel]' -> parse_line\n");
+            fprintf(stderr, "Memory allocation error!\n");
             return 1;
         }
         int i;
@@ -154,7 +157,7 @@ int alloc_pixels(FILE *imgfile, ppmimage_t *ppmimg)
         if (imgfile != stdin)
             fclose(imgfile);
         free_ppmimage(ppmimg);
-        fprintf(stderr, "Memory allocation error\n");
+        fprintf(stderr, "Memory allocation error!\n");
         return 1;
     }
 
@@ -282,16 +285,13 @@ void dominant_color_ppmimage(ppmimage_t *ppmimg, int init_lin, int init_col, int
 {
     /* === Cálculo da cor predominante === */
     int lin, col;
-    for (lin = init_lin; lin < init_lin + offset_lin; lin++)
+    for (lin = init_lin; (lin < init_lin + offset_lin) && (lin < ppmimg->height); lin++)
     {
-        for (col = init_col; col < init_col + offset_col; col++)
+        for (col = init_col; (col < init_col + offset_col) && (col < ppmimg->width); col++)
         {
-            if (lin < ppmimg->height && col < ppmimg->width)
-            {
-                dominant_color_rgb[0] += (ppmimg->img[lin][col].red * ppmimg->img[lin][col].red);
-                dominant_color_rgb[1] += (ppmimg->img[lin][col].green * ppmimg->img[lin][col].green);
-                dominant_color_rgb[2] += (ppmimg->img[lin][col].blue * ppmimg->img[lin][col].blue);
-            }
+            dominant_color_rgb[RED] += (ppmimg->img[lin][col].red * ppmimg->img[lin][col].red);
+            dominant_color_rgb[GREEN] += (ppmimg->img[lin][col].green * ppmimg->img[lin][col].green);
+            dominant_color_rgb[BLUE] += (ppmimg->img[lin][col].blue * ppmimg->img[lin][col].blue);
         }
     }
 
@@ -303,8 +303,10 @@ void dominant_color_ppmimage(ppmimage_t *ppmimg, int init_lin, int init_col, int
 
 float approx_redmean(float *rgb_1, float *rgb_2)
 {
-    float redmean = (rgb_2[0] + rgb_1[0]) / 2;
-    float delta_red = (rgb_2[0] - rgb_1[0]), delta_green = (rgb_2[1] - rgb_1[1]), delta_blue = (rgb_2[2] - rgb_1[2]);
+    float redmean = (rgb_2[RED] + rgb_1[RED]) / 2;
+    float delta_red = (rgb_2[RED] - rgb_1[RED]); 
+    float delta_green = (rgb_2[GREEN] - rgb_1[GREEN]); 
+    float delta_blue = (rgb_2[BLUE] - rgb_1[BLUE]);
 
     float first_term = ((2 + (redmean / 256)) * powf(delta_red, 2));
     float second_term = (4 * powf(delta_green, 2));
@@ -315,18 +317,15 @@ float approx_redmean(float *rgb_1, float *rgb_2)
 
 void change_submatrix_ppmimage(ppmimage_t *main_ppmimg, int init_lin, int init_col, ppmimage_t *ppmimg)
 {
-    /* === Muda os valores de uma submatriz de ordem 'ppmimg->height X ppmimg->width' da imagem principal === */
+    /* === Muda os valores dos pixels de uma submatriz de ordem 'ppmimg->height X ppmimg->width' da imagem principal === */
     int main_lin, main_col, lin, col;
-    for (main_lin = init_lin, lin = 0; main_lin < init_lin + ppmimg->height; main_lin++, lin++)
+    for (main_lin = init_lin, lin = 0; (main_lin < init_lin + ppmimg->height) && (main_lin < main_ppmimg->height); main_lin++, lin++)
     {
-        for (main_col = init_col, col = 0; main_col < init_col + ppmimg->width; main_col++, col++)
+        for (main_col = init_col, col = 0; (main_col < init_col + ppmimg->width) && (main_col < main_ppmimg->width); main_col++, col++)
         {
-            if (main_lin < main_ppmimg->height && main_col < main_ppmimg->width)
-            {
-                main_ppmimg->img[main_lin][main_col].red = ppmimg->img[lin][col].red;
-                main_ppmimg->img[main_lin][main_col].green = ppmimg->img[lin][col].green;
-                main_ppmimg->img[main_lin][main_col].blue = ppmimg->img[lin][col].blue;
-            }
+            main_ppmimg->img[main_lin][main_col].red = ppmimg->img[lin][col].red;
+            main_ppmimg->img[main_lin][main_col].green = ppmimg->img[lin][col].green;
+            main_ppmimg->img[main_lin][main_col].blue = ppmimg->img[lin][col].blue;
         }
     }
 }
