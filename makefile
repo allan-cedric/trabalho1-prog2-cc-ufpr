@@ -1,3 +1,4 @@
+# Allan Cedric G. B. Alves da Silva - GRR20190351
 CC = gcc # Compilador
 CFLAGS = -Wall -Wextra -g # Flags de compilação
 LDLIBS = -lm # Ligação das bibliotecas

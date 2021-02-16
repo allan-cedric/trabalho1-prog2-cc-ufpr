@@ -2,7 +2,7 @@
     ===
     Source file: 'mosaico.c'
     Autor: Allan Cedric G. B. Alves da Silva
-    Profile: Estudante de Ciência da Computação - UFPR
+    Profile: Estudante de Ciência da Computação - UFPR - GRR20190351
 
     Programa que gera um fotomosaico no formato PPM a partir de uma imagem PPM
     ===

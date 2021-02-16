@@ -2,7 +2,7 @@
     ===
     Header file: 'ppmimage.h'
     Autor: Allan Cedric G. B. Alves da Silva
-    Profile: Estudante de Ciência da Computação - UFPR
+    Profile: Estudante de Ciência da Computação - UFPR - GRR20190351
 
     Biblioteca que serve para realizar operações em uma imagem no formato PPM(Portable PixMap)
     ===

@@ -2,7 +2,7 @@
     ===
     Source file: 'parsing.c'
     Autor: Allan Cedric G. B. Alves da Silva
-    Profile: Estudante de Ciência da Computação - UFPR
+    Profile: Estudante de Ciência da Computação - UFPR - GRR20190351
 
     Biblioteca que serve para realizar o parsing de opções/argumentos da linha de comando
     ===
