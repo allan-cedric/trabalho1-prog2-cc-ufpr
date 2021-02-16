@@ -11,7 +11,7 @@ all: mosaico
 mosaico: $(OBJS)
 
 # Regras de compilação
-mosaico.o: mosaico.c parsing/parsing.h
+mosaico.o: mosaico.c parsing/parsing.h ppmimage/ppmimage.h
 parsing/parsing.o: parsing/parsing.c parsing/parsing.h
 ppmimage/ppmimage.o: ppmimage/ppmimage.c ppmimage/ppmimage.h
 
