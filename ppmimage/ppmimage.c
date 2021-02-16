@@ -103,7 +103,15 @@ int parse_header(FILE *imgfile, ppmimage_t *ppmimg)
         /* === Consome um 'whitespace' - separador genérico === */
         fgetc(imgfile);
     }
-
+    
+    /* === Tratamento específico de comentários pós-header === */
+    if(!strcmp(ppmimg->type, "P3"))
+    {
+        while (fgetc(imgfile) == '#')
+            while (fgetc(imgfile) != '\n');
+        fseek(imgfile, -1, SEEK_CUR);
+    }
+    
     return 0;
 }
 
