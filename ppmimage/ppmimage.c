@@ -175,9 +175,15 @@ int alloc_pixels(FILE *imgfile, ppmimage_t *ppmimg)
 
     /* === Parsing dos pixels === */
     if (!strcmp(ppmimg->type, "P3"))
-        parse_pixels_P3(imgfile, ppmimg);
+    {
+        if(parse_pixels_P3(imgfile, ppmimg))
+            return 1;
+    }
     else
-        parse_pixels_P6(imgfile, ppmimg);
+    {
+        if(parse_pixels_P6(imgfile, ppmimg))
+            return 1;
+    }
 
     /* === Cálculo da cor predominante === */
     int num_pixels = (ppmimg->width * ppmimg->height);
@@ -382,7 +388,7 @@ int write_ppmimage(ppmimage_t *ppmimg, FILE *imgfile)
         {
             for (j = 0; j < ppmimg->width; j++)
             {
-                ret = fprintf(imgfile, "%i\n%i\n%i\n", ppmimg->img[i][j].red, ppmimg->img[i][j].green, ppmimg->img[i][j].blue);
+                ret = fprintf(imgfile, "%i %i %i\n", ppmimg->img[i][j].red, ppmimg->img[i][j].green, ppmimg->img[i][j].blue);
                 if (ret < 0)
                 {
                     if (imgfile != stdout)
