@@ -2,3 +2,5 @@ tiles*
 *.ppm
 .vscode/
 tenhamente*
+mosaico
+*.o

@@ -176,7 +176,7 @@ int main(int argc, char **argv)
         fclose(imgfile);
 
     /* === Geração do fotomosaico === */
-    fprintf(stderr, "Building mosaic image\n");
+    fprintf(stderr, "Building mosaic image...\n");
     int lin, col, offset_width, offset_height;
     offset_width = tiles[0].width;
     offset_height = tiles[0].height;
@@ -238,7 +238,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    fprintf(stderr, "Writing output file\n");
+    fprintf(stderr, "Writing output file...\n");
     if (write_ppmimage(&input_ppmimg, output_ppmmosaic))
         exit(1);
 
