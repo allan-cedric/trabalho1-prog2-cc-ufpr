@@ -45,7 +45,8 @@ int parse_header(FILE *imgfile, ppmimage_t *ppmimg)
         return 1;
     }
     /* === Consome um 'whitespace' - separador genérico === */
-    fgetc(imgfile);
+    while (fgetc(imgfile) <= 32);
+    fseek(imgfile, -1, SEEK_CUR);
 
     /* === Repassa o tipo da imagem que está no buffer para o local de armazenamento principal === */
     ppmimg->type = (char *)malloc(sizeof(char) * (MAX_SIZE_PPM_TYPE_STR + 1));
@@ -101,7 +102,8 @@ int parse_header(FILE *imgfile, ppmimage_t *ppmimg)
             return 1;
         }
         /* === Consome um 'whitespace' - separador genérico === */
-        fgetc(imgfile);
+        while (fgetc(imgfile) <= 32);
+        fseek(imgfile, -1, SEEK_CUR);
     }
     
     /* === Tratamento específico de comentários pós-header === */
