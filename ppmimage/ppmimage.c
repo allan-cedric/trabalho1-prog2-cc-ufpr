@@ -71,7 +71,12 @@ int parse_header(FILE *imgfile, ppmimage_t *ppmimg)
     {
         /* === Ignora os comentários. === */
         while (fgetc(imgfile) == '#')
+        {
             while (fgetc(imgfile) != '\n');
+            /* === Consome um 'whitespace' - separador genérico === */
+            while (fgetc(imgfile) <= 32);
+            fseek(imgfile, -1, SEEK_CUR);
+        }
         fseek(imgfile, -1, SEEK_CUR);
 
         /* === Chavea qual dado vai ser armazenado, seguindo a ordem feita no formarto PPM === */
@@ -101,16 +106,27 @@ int parse_header(FILE *imgfile, ppmimage_t *ppmimg)
             fprintf(stderr, "Error reading header\n");
             return 1;
         }
-        /* === Consome um 'whitespace' - separador genérico === */
-        while (fgetc(imgfile) <= 32);
-        fseek(imgfile, -1, SEEK_CUR);
+        /* === Tratamento de 'whitespaces' === */
+        if(!strcmp(ppmimg->type, "P3") || search_value < 3)
+        {
+            /* === Consome um 'whitespace' - separador genérico === */
+            while (fgetc(imgfile) <= 32);
+            fseek(imgfile, -1, SEEK_CUR);
+        }else
+            fgetc(imgfile);
     }
     
-    /* === Tratamento específico de comentários pós-header === */
+    /* === Tratamento específico de comentários pós-header (P3) === */
     if(!strcmp(ppmimg->type, "P3"))
     {
+        /* === Ignora os comentários. === */
         while (fgetc(imgfile) == '#')
+        {
             while (fgetc(imgfile) != '\n');
+            /* === Consome um 'whitespace' - separador genérico === */
+            while (fgetc(imgfile) <= 32);
+            fseek(imgfile, -1, SEEK_CUR);
+        }
         fseek(imgfile, -1, SEEK_CUR);
     }
     
